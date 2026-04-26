@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="64dp"
+    android:background="@android:color/black">
+
+    <!-- Logo / Title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="📡 Beam"
+        android:textSize="48sp"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Beam any website to your TV"
+        android:textSize="16sp"
+        android:textColor="#AAAAAA"
+        android:layout_marginBottom="48dp" />
+
+    <!-- URL Input -->
+    <EditText
+        android:id="@+id/urlInput"
+        android:layout_width="600dp"
+        android:layout_height="wrap_content"
+        android:hint="Paste a website URL here..."
+        android:textColor="#FFFFFF"
+        android:textColorHint="#666666"
+        android:background="@drawable/input_background"
+        android:padding="16dp"
+        android:textSize="18sp"
+        android:inputType="textUri"
+        android:imeOptions="actionGo"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Beam It button -->
+    <Button
+        android:id="@+id/beamButton"
+        android:layout_width="300dp"
+        android:layout_height="56dp"
+        android:text="⚡ Beam It"
+        android:textSize="18sp"
+        android:textColor="#000000"
+        android:backgroundTint="#FFFFFF"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Settings button -->
+    <Button
+        android:id="@+id/settingsButton"
+        style="?android:attr/borderlessButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="⚙ Settings / API Key"
+        android:textColor="#AAAAAA"
+        android:textSize="14sp" />
+
+</LinearLayout>
