@@ -40,7 +40,7 @@ class HtmlFetcher {
             val request = Request.Builder()
                 .url(url)
                 .header("User-Agent", USER_AGENT)
-                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,/;q=0.8")
                 .header("Accept-Language", "en-US,en;q=0.5")
                 .build()
 
@@ -57,7 +57,9 @@ class HtmlFetcher {
                 Log.w(TAG, "Non-HTML content type: $contentType for $url")
             }
 
-            response.body?.string()
+            val content = response.body?.string()
+            Log.d(TAG, "Fetched ${content?.length ?: 0} chars from $url")
+            return@withContext content
 
         } catch (e: Exception) {
             Log.e(TAG, "Failed to fetch $url", e)
