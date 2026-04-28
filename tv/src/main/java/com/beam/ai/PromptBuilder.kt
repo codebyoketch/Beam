@@ -1,6 +1,8 @@
 package com.beam.ai
 
+import android.util.Log
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 
 /**
  * Builds the prompt sent to the AI provider.
@@ -8,49 +10,55 @@ import org.jsoup.Jsoup
  */
 object PromptBuilder {
 
-    // Max characters of HTML to send — keeps costs/tokens low
-    private const val MAX_HTML_LENGTH = 12_000
+    private const val TAG = "PromptBuilder"
+
+    // Increased limit — Groq handles larger context well
+    private const val MAX_HTML_LENGTH = 20_000
 
     fun buildPageAnalysisPrompt(url: String, rawHtml: String): String {
         val cleanedHtml = cleanHtml(rawHtml)
+        Log.d(TAG, "Cleaned HTML length: ${cleanedHtml.length} chars (original: ${rawHtml.length})")
 
         return """
-You are an AI that converts streaming websites into structured TV app content.
+You are an AI that extracts media content from websites and formats it for a TV app.
 
-Analyze the HTML below from this URL: $url
+Analyze the HTML below from: $url
 
-Your job is to find all movies, TV shows, videos, or any media content on the page.
-Group them into logical rows/categories if possible (e.g. "Trending", "Action", "New Releases").
+Find ANY of the following on the page:
+- Movies, TV shows, episodes, videos, films
+- Links to pages that likely contain videos (e.g. /movie/, /watch/, /film/, /video/)
+- Titles with associated links, even if no thumbnail exists
+- Lists of media content, even if just text links
 
-Return ONLY a valid JSON object. No explanation, no markdown, no backticks. Just raw JSON.
+Group items into rows by category if possible. If no categories exist, put everything in one row called "Content".
 
-Use this exact structure:
+IMPORTANT RULES:
+- detailUrl is the most important field — always include it if a link exists
+- thumbnailUrl is optional — use empty string "" if not found
+- description is optional — use empty string "" if not found  
+- Include ALL links that could be media content, even if you are not 100% sure
+- The base URL is $url — convert relative URLs like /movie/abc to absolute URLs
+- Do NOT return empty rows array unless the page truly has zero links
+
+Return ONLY raw JSON with this structure, no markdown, no backticks:
 {
   "siteName": "Name of the website",
   "rows": [
     {
-      "title": "Row/Category name",
+      "title": "Category name or Content",
       "items": [
         {
-          "title": "Title of the movie or show",
-          "thumbnailUrl": "https://absolute-url-to-thumbnail.jpg",
-          "detailUrl": "https://absolute-url-to-the-video-page.com/video",
-          "description": "Short description if available, empty string if not"
+          "title": "Title of the item",
+          "thumbnailUrl": "",
+          "detailUrl": "https://absolute-url-to-page",
+          "description": ""
         }
       ]
     }
   ]
 }
 
-Rules:
-- thumbnailUrl MUST be an absolute URL (starting with https:// or http://)
-- detailUrl MUST be an absolute URL to where the video can be found
-- If you cannot find thumbnails, use empty string ""
-- Skip any items that are clearly ads or non-video content
-- Return at least 1 row even if content is minimal
-- If the page has no video content at all, return: {"siteName": "", "rows": []}
-
-HTML to analyze:
+HTML:
 $cleanedHtml
         """.trimIndent()
     }
@@ -93,41 +101,59 @@ $cleanedHtml
     }
 
     /**
-     * Cleans HTML to reduce token usage:
-     * - Removes script and style tags (keep script src for hints)
-     * - Removes comments
-     * - Collapses whitespace
-     * - Trims to max length
+     * Extracts meaningful text and links from HTML.
+     * Uses Jsoup to get clean content instead of raw HTML tags.
      */
     private fun cleanHtml(html: String): String {
         return try {
             val doc = Jsoup.parse(html)
 
-            // Remove elements that waste tokens
-            doc.select("style, noscript, footer, nav, header").remove()
+            // Remove noise elements
+            doc.select("style, script, noscript, footer, nav, head, iframe[src*=ad]").remove()
 
-            // Keep scripts — they sometimes contain stream URLs
-            // but strip the content of long ones
-            doc.select("script").forEach { script ->
-                if (script.html().length > 500) {
-                    script.remove()
+            // Extract all links with their text — this is the most useful signal
+            val links = StringBuilder()
+            doc.select("a[href]").forEach { element ->
+                val href = element.absUrl("href").ifBlank { element.attr("href") }
+                val text = element.text().trim()
+                val img = element.select("img[src]").firstOrNull()?.absUrl("src") ?: ""
+
+                if (text.isNotBlank() && href.isNotBlank() && href.startsWith("http")) {
+                    if (img.isNotBlank()) {
+                        links.append("LINK: $text | URL: $href | IMG: $img\n")
+                    } else {
+                        links.append("LINK: $text | URL: $href\n")
+                    }
                 }
             }
 
-            // Get clean text representation
-            val cleaned = doc.html()
-                .replace(Regex("<!--.*?-->", RegexOption.DOT_MATCHES_ALL), "")
-                .replace(Regex("\\s+"), " ")
-                .trim()
+            // Also get the page title and headings for context
+            val title = doc.title()
+            val headings = doc.select("h1, h2, h3")
+                .take(10)
+                .joinToString("\n") { it.text().trim() }
+                .ifBlank { "" }
+
+            val result = buildString {
+                append("PAGE TITLE: $title\n\n")
+                if (headings.isNotBlank()) {
+                    append("HEADINGS:\n$headings\n\n")
+                }
+                append("LINKS FOUND:\n")
+                append(links.toString())
+            }
+
+            Log.d(TAG, "Extracted ${result.lines().size} lines of content")
 
             // Trim to max length
-            if (cleaned.length > MAX_HTML_LENGTH) {
-                cleaned.substring(0, MAX_HTML_LENGTH) + "\n... [HTML truncated]"
+            if (result.length > MAX_HTML_LENGTH) {
+                result.substring(0, MAX_HTML_LENGTH) + "\n... [truncated]"
             } else {
-                cleaned
+                result
             }
+
         } catch (e: Exception) {
-            // Fallback: just truncate raw HTML
+            Log.e(TAG, "Error cleaning HTML", e)
             html.take(MAX_HTML_LENGTH)
         }
     }
