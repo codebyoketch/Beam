@@ -1,6 +1,6 @@
 # 📡 Beam
 
-*Beam any website into a native Android TV experience — powered by AI.*
+**Beam any website into a native Android TV experience — powered by AI.**
 
 Paste or share a URL from your phone. Beam analyzes the page, extracts the content, and turns it into a beautiful TV browse screen. Pick a video. It plays.
 
@@ -26,9 +26,9 @@ No scraper maintenance. No site-specific plugins. Just AI.
 
 The Beam phone app makes everything easier:
 
-- *Auto-discovers* your Beam TV on the local network — no IP address typing
-- *Share from browser* — tap Share → Beam in any browser to send URLs to your TV instantly
-- *Send API key* — configure your TV's AI key from your phone without typing on the remote
+- **Auto-discovers** your Beam TV on the local network — no IP address typing
+- **Share from browser** — tap Share → Beam in any browser to send URLs to your TV instantly
+- **Send API key** — configure your TV's AI key from your phone without typing on the remote
 
 ---
 
@@ -43,8 +43,8 @@ The Beam phone app makes everything easier:
 ### Installation
 
 1. Download the latest APK from [Releases](https://github.com/codebyoketch/Beam/releases)
-2. Install beam-tv.apk on your Android TV
-3. Install beam-phone.apk on your Android phone
+2. Install `beam-tv.apk` on your Android TV
+3. Install `beam-phone.apk` on your Android phone
 4. Open Beam on your TV
 5. Open Beam on your phone — it will auto-discover your TV
 6. Use the phone app to send your API key to the TV
@@ -53,9 +53,9 @@ The Beam phone app makes everything easier:
 
 | Provider | Link | Notes |
 |---|---|---|
-| *Google Gemini* | https://aistudio.google.com | Recommended — generous free tier |
-| *Groq* | https://console.groq.com | Very fast, Llama 3 |
-| *Ollama* | https://ollama.com | Fully local, no key needed |
+| **Google Gemini** | https://aistudio.google.com | Recommended — generous free tier |
+| **Groq** | https://console.groq.com | Very fast, Llama 3 |
+| **Ollama** | https://ollama.com | Fully local, no key needed |
 
 ---
 
@@ -65,7 +65,7 @@ The Beam phone app makes everything easier:
 2. Open Beam on your phone
 3. Phone auto-discovers the TV on your network
 4. In your phone browser, find a streaming site
-5. Tap *Share → Beam*
+5. Tap **Share → Beam**
 6. The site appears on your TV as a native browse screen
 7. Navigate with your remote, pick a video, hit Play
 
@@ -73,7 +73,7 @@ The Beam phone app makes everything easier:
 
 ## 🏗️ Architecture
 
-
+```
 Phone Browser
       ↓ Share
 Phone Beam App
@@ -91,7 +91,7 @@ Leanback BrowseFragment (native TV UI)
 StreamExtractor → finds .m3u8 / .mp4 URL
       ↓
 ExoPlayer (fullscreen playback)
-
+```
 
 ---
 
@@ -113,7 +113,7 @@ ExoPlayer (fullscreen playback)
 
 ## 📁 Project Structure
 
-
+```
 Beam/
 ├── tv/                          # Android TV app
 │   └── src/main/java/com/beam/
@@ -143,16 +143,16 @@ Beam/
     └── src/main/java/com/beam/phone/
         ├── MainActivity.kt      # Main UI — scan, send URLs, send keys
         └── BeamScanner.kt       # mDNS TV discovery
-
+```
 
 ---
 
 ## ⚠️ Known Limitations
 
-- *JavaScript-heavy sites* return limited content — a WebView fallback is planned
-- *DRM-protected streams* (Netflix, Disney+) cannot be played
-- *Some streaming sites* obfuscate their video players — stream extraction may fail
-- Phone-to-TV communication requires both devices on the *same WiFi network*
+- **JavaScript-heavy sites** return limited content — a WebView fallback is planned
+- **DRM-protected streams** (Netflix, Disney+) cannot be played
+- **Some streaming sites** obfuscate their video players — stream extraction may fail
+- Phone-to-TV communication requires both devices on the **same WiFi network**
 
 ---
 
