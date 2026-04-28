@@ -143,7 +143,7 @@ class ContentCardPresenter : Presenter() {
         return ViewHolder(cardView)
     }
 
-    override fun onBindViewHolder(viewHolder: ViewHolder, item: Any) {
+    override fun onBindViewHolder(viewHolder: ViewHolder, item: Any?) {
         val card = viewHolder.view as androidx.leanback.widget.ImageCardView
         val contentItem = item as ContentItem
 

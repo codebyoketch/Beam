@@ -1,72 +1,161 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="32dp"
-    android:background="#000000">
+    android:background="#000000"
+    android:padding="24dp">
 
-    <!-- Logo -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="📡"
-        android:textSize="64sp"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Beam"
-        android:textColor="#FFFFFF"
-        android:textSize="36sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Send any website to your TV"
-        android:textColor="#AAAAAA"
-        android:textSize="14sp"
-        android:layout_marginBottom="48dp" />
-
-    <!-- URL Input -->
-    <EditText
-        android:id="@+id/urlInput"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:hint="Paste or type a URL..."
-        android:textColor="#FFFFFF"
-        android:textColorHint="#666666"
-        android:background="@drawable/input_background"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:textSize="16sp"
-        android:inputType="textUri"
-        android:imeOptions="actionGo"
-        android:layout_marginBottom="16dp" />
-
-    <!-- Send button -->
-    <Button
-        android:id="@+id/sendButton"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="⚡ Send to TV"
-        android:textSize="18sp"
-        android:textColor="#000000"
-        android:backgroundTint="#FFFFFF"
-        android:layout_marginBottom="24dp" />
-
-    <!-- Status -->
-    <TextView
-        android:id="@+id/statusText"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="#4CAF50"
-        android:textSize="14sp"
-        android:gravity="center"
-        android:text="Share a link from your browser to Beam it instantly" />
+        android:orientation="vertical">
 
-</LinearLayout>
+        <!-- Header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📡 Beam"
+            android:textColor="#FFFFFF"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Remote control for your TV"
+            android:textColor="#AAAAAA"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Selected TV -->
+        <TextView
+            android:id="@+id/selectedTvText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No TV selected"
+            android:textColor="#4CAF50"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Scan Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="BEAM TVS ON THIS NETWORK"
+            android:textColor="#AAAAAA"
+            android:textSize="11sp"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/scanButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="🔍 Scan for TVs"
+            android:textColor="#000000"
+            android:backgroundTint="#AAAAAA"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Device list populated dynamically -->
+        <LinearLayout
+            android:id="@+id/deviceListLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/noDevicesText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="No TVs found yet — make sure Beam is open on your TV"
+            android:textColor="#666666"
+            android:textSize="13sp"
+            android:layout_marginBottom="24dp"
+            android:visibility="gone" />
+
+        <!-- Send URL Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SEND URL TO TV"
+            android:textColor="#AAAAAA"
+            android:textSize="11sp"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/urlInput"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="Paste or share a URL..."
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666"
+            android:background="@drawable/input_background"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:inputType="textUri"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/sendUrlButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="⚡ Send to TV"
+            android:textColor="#000000"
+            android:backgroundTint="#FFFFFF"
+            android:layout_marginBottom="32dp" />
+
+        <!-- API Key Section -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SETUP API KEY ON TV"
+            android:textColor="#AAAAAA"
+            android:textSize="11sp"
+            android:letterSpacing="0.1"
+            android:layout_marginBottom="8dp" />
+
+        <Spinner
+            android:id="@+id/providerSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:background="@drawable/input_background"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/apiKeyInput"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:hint="Paste your API key here"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#666666"
+            android:background="@drawable/input_background"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:inputType="textVisiblePassword"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/sendKeyButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Send API Key to TV"
+            android:textColor="#000000"
+            android:backgroundTint="#4FC3F7"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Status -->
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#4CAF50"
+            android:textSize="14sp"
+            android:text="Scanning for Beam TVs..." />
+
+    </LinearLayout>
+
+</ScrollView>

@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.beam"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.beam"
-        minSdk = 21
-        targetSdk = 34
+        minSdk = 23
+        targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
     }
@@ -31,8 +31,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
 
     buildFeatures {
@@ -41,40 +43,23 @@ android {
 }
 
 dependencies {
-    // TV / Leanback
     implementation(libs.androidx.leanback)
     implementation(libs.androidx.leanback.preference)
-
-    // ExoPlayer
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.exoplayer.hls)
     implementation(libs.media3.exoplayer.dash)
     implementation(libs.media3.ui)
     implementation(libs.media3.common)
-
-    // Networking
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
     implementation(libs.jsoup)
-
-    // JSON
     implementation(libs.gson)
-
-    // Image loading
     implementation(libs.glide)
-
-    // Coroutines
     implementation(libs.coroutines.android)
-
-    // Secure storage
     implementation(libs.security.crypto)
-
-    // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     kapt(libs.room.compiler)
-
-    // Core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.lifecycle.viewmodel)
