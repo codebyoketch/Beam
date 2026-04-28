@@ -28,7 +28,7 @@ class GeminiProvider(private val apiKey: String) : AIProvider {
         .build()
 
     private val baseUrl =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 
     override suspend fun complete(prompt: String): String = withContext(Dispatchers.IO) {
         val body = JSONObject().apply {

@@ -28,7 +28,7 @@ class GroqProvider(private val apiKey: String) : AIProvider {
 
     override suspend fun complete(prompt: String): String = withContext(Dispatchers.IO) {
         val body = JSONObject().apply {
-            put("model", "llama3-70b-8192")
+            put("model", "llama-3.3-70b-versatile")
             put("temperature", 0.1)
             put("max_tokens", 4096)
             put("messages", JSONArray().apply {
