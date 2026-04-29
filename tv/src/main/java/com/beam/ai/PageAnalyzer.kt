@@ -1,6 +1,8 @@
 package com.beam.ai
 
+import android.content.Context
 import android.util.Log
+import com.beam.cache.CacheManager
 import com.beam.model.ContentItem
 import com.beam.model.ContentRow
 import com.beam.model.ParsedPage
@@ -11,26 +13,48 @@ import org.json.JSONObject
  * PageAnalyzer is the core of Beam.
  * It fetches a URL, sends the HTML to the AI, and returns
  * a structured ParsedPage ready for the TV UI.
+ *
+ * Results are cached in Room DB for 24 hours to avoid
+ * repeated AI calls for the same page.
  */
 class PageAnalyzer(
     private val provider: AIProvider,
-    private val htmlFetcher: HtmlFetcher
+    private val htmlFetcher: HtmlFetcher,
+    private val context: Context? = null  // optional — needed for cache
 ) {
 
     companion object {
         private const val TAG = "PageAnalyzer"
     }
 
+    private val cache: CacheManager? = context?.let { CacheManager(it) }
+
     /**
      * Analyzes a URL and returns structured page content.
+     * Checks cache first — only calls AI if no valid cache exists.
+     *
      * @param url The website URL to analyze
+     * @param forceRefresh Skip cache and always fetch fresh
      * @param onProgress Optional callback for loading state updates
      */
     suspend fun analyze(
         url: String,
+        forceRefresh: Boolean = false,
         onProgress: ((String) -> Unit)? = null
     ): Result<ParsedPage> {
         return try {
+
+            // Check cache first
+            if (!forceRefresh && cache != null) {
+                onProgress?.invoke("Checking cache...")
+                val cached = cache.get(url)
+                if (cached != null) {
+                    Log.d(TAG, "Returning cached result for $url")
+                    onProgress?.invoke("Loaded from cache!")
+                    return Result.success(cached)
+                }
+            }
+
             // Step 1: Fetch the HTML
             onProgress?.invoke("Fetching page...")
             val html = htmlFetcher.fetch(url)
@@ -44,6 +68,9 @@ class PageAnalyzer(
             // Step 3: Parse the AI's JSON response
             onProgress?.invoke("Building TV view...")
             val parsedPage = parseAiResponse(aiResponse, url)
+
+            // Step 4: Save to cache
+            cache?.save(url, parsedPage)
 
             Result.success(parsedPage)
 
@@ -61,7 +88,6 @@ class PageAnalyzer(
      * Handles common AI output issues like markdown fences.
      */
     private fun parseAiResponse(rawResponse: String, sourceUrl: String): ParsedPage {
-        // Strip markdown code fences if AI accidentally added them
         val cleaned = rawResponse
             .removePrefix("```json")
             .removePrefix("```")
@@ -90,7 +116,6 @@ class PageAnalyzer(
                             detailUrl = itemJson.optString("detailUrl", ""),
                             description = itemJson.optString("description", "")
                         )
-                        // Only add items with a valid detail URL
                         if (item.detailUrl.isNotBlank()) {
                             items.add(item)
                         }
@@ -110,7 +135,6 @@ class PageAnalyzer(
 
         } catch (e: Exception) {
             Log.e(TAG, "Failed to parse AI response: $cleaned", e)
-            // Return empty page rather than crashing
             ParsedPage(
                 siteName = extractDomain(sourceUrl),
                 sourceUrl = sourceUrl,

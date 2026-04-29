@@ -24,16 +24,21 @@ class BrowseFragment : BrowseSupportFragment() {
 
     companion object {
         const val ARG_URL = "url"
+        const val ARG_FORCE_REFRESH = "force_refresh"
         private const val TAG = "BrowseFragment"
 
-        fun newInstance(url: String): BrowseFragment {
+        fun newInstance(url: String, forceRefresh: Boolean = false): BrowseFragment {
             return BrowseFragment().apply {
-                arguments = Bundle().apply { putString(ARG_URL, url) }
+                arguments = Bundle().apply {
+                    putString(ARG_URL, url)
+                    putBoolean(ARG_FORCE_REFRESH, forceRefresh)
+                }
             }
         }
     }
 
     private val targetUrl by lazy { arguments?.getString(ARG_URL) ?: "" }
+    private val forceRefresh by lazy { arguments?.getBoolean(ARG_FORCE_REFRESH, false) ?: false }
     private val rowsAdapter = ArrayObjectAdapter(ListRowPresenter())
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -49,9 +54,7 @@ class BrowseFragment : BrowseSupportFragment() {
         adapter = rowsAdapter
 
         onItemViewClickedListener = OnItemViewClickedListener { _, item, _, _ ->
-            if (item is ContentItem) {
-                openDetail(item)
-            }
+            if (item is ContentItem) openDetail(item)
         }
     }
 
@@ -85,9 +88,7 @@ class BrowseFragment : BrowseSupportFragment() {
                 Log.d(TAG, "Provider: $providerKey, hasKey: ${apiKey.isNotBlank()}")
 
                 if (apiKey.isBlank() && providerKey != SettingsFragment.PROVIDER_OLLAMA) {
-                    activity?.runOnUiThread {
-                        title = "No API key set — go to Settings"
-                    }
+                    activity?.runOnUiThread { title = "No API key set — go to Settings" }
                     return@launch
                 }
 
@@ -98,8 +99,12 @@ class BrowseFragment : BrowseSupportFragment() {
                 }
 
                 Log.d(TAG, "Starting analysis with provider: ${aiProvider.name}")
-                val analyzer = PageAnalyzer(aiProvider, HtmlFetcher())
-                val result = analyzer.analyze(targetUrl) { progress ->
+
+                val analyzer = PageAnalyzer(aiProvider, HtmlFetcher(), requireContext())
+                val result = analyzer.analyze(
+                    url = targetUrl,
+                    forceRefresh = forceRefresh
+                ) { progress ->
                     Log.d(TAG, "Progress: $progress")
                     activity?.runOnUiThread { title = progress }
                 }
@@ -110,15 +115,11 @@ class BrowseFragment : BrowseSupportFragment() {
                 }
                 result.onFailure { error ->
                     Log.e(TAG, "Analysis failed", error)
-                    activity?.runOnUiThread {
-                        title = "Failed to load — ${error.message}"
-                    }
+                    activity?.runOnUiThread { title = "Failed to load — ${error.message}" }
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Unexpected error in loadContent", e)
-                activity?.runOnUiThread {
-                    title = "Error — ${e.message}"
-                }
+                activity?.runOnUiThread { title = "Error — ${e.message}" }
             }
         }
     }
@@ -129,12 +130,10 @@ class BrowseFragment : BrowseSupportFragment() {
             rowsAdapter.clear()
 
             val presenter = ContentCardPresenter()
-
             page.rows.forEach { row ->
                 val itemsAdapter = ArrayObjectAdapter(presenter)
                 row.items.forEach { item -> itemsAdapter.add(item) }
-                val header = HeaderItem(row.title)
-                rowsAdapter.add(ListRow(header, itemsAdapter))
+                rowsAdapter.add(ListRow(HeaderItem(row.title), itemsAdapter))
             }
 
             if (page.rows.isEmpty()) {
@@ -175,10 +174,7 @@ class ContentCardPresenter : Presenter() {
                 .load(contentItem.thumbnailUrl)
                 .centerCrop()
                 .into(object : SimpleTarget<Drawable>() {
-                    override fun onResourceReady(
-                        resource: Drawable,
-                        transition: Transition<in Drawable>?
-                    ) {
+                    override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
                         card.mainImage = resource
                     }
                 })
@@ -186,7 +182,6 @@ class ContentCardPresenter : Presenter() {
     }
 
     override fun onUnbindViewHolder(viewHolder: ViewHolder) {
-        val card = viewHolder.view as androidx.leanback.widget.ImageCardView
-        card.mainImage = null
+        (viewHolder.view as androidx.leanback.widget.ImageCardView).mainImage = null
     }
 }
