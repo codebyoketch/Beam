@@ -22,7 +22,7 @@ class HtmlFetcher {
         // Mimic a real browser to avoid bot detection
         private const val USER_AGENT =
             "Mozilla/5.0 (Linux; Android 13; SHIELD TV) AppleWebKit/537.36 " +
-            "(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
+                    "(KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36"
     }
 
     private val client = OkHttpClient.Builder()
@@ -36,11 +36,18 @@ class HtmlFetcher {
      * Returns null if the request fails or the content is not HTML.
      */
     suspend fun fetch(url: String): String? = withContext(Dispatchers.IO) {
+
+        // Guard: ensure valid scheme
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            Log.e(TAG, "Invalid URL scheme: $url")
+            return@withContext null
+        }
+
         try {
             val request = Request.Builder()
                 .url(url)
                 .header("User-Agent", USER_AGENT)
-                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,/;q=0.8")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
                 .header("Accept-Language", "en-US,en;q=0.5")
                 .build()
 

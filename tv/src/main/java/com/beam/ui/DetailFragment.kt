@@ -10,9 +10,9 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.beam.R
-import com.beam.ai.GeminiProvider
-import com.beam.ai.GroqProvider
-import com.beam.ai.OllamaProvider
+import com.beam.ai.AIRouter
+import com.beam.ai.AITask
+import com.beam.ai.TokenTracker
 import com.beam.model.ContentItem
 import com.beam.model.StreamType
 import com.beam.scraper.HtmlFetcher
@@ -21,14 +21,6 @@ import com.beam.scraper.WebViewStreamExtractor
 import com.bumptech.glide.Glide
 import kotlinx.coroutines.launch
 
-/**
- * Detail screen showing info about a selected video.
- * Has a Play button that extracts the stream and launches playback.
- *
- * Stream extraction strategy:
- * 1. Static HTML extraction (fast)
- * 2. WebView extraction fallback (slower but works on JS sites)
- */
 class DetailFragment : Fragment() {
 
     companion object {
@@ -49,11 +41,8 @@ class DetailFragment : Fragment() {
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View = inflater.inflate(R.layout.fragment_detail, container, false)
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View =
+        inflater.inflate(R.layout.fragment_detail, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -66,9 +55,8 @@ class DetailFragment : Fragment() {
         view.findViewById<TextView>(R.id.titleText).text = title
         view.findViewById<TextView>(R.id.descriptionText).text = description
 
-        val thumbnail = view.findViewById<ImageView>(R.id.thumbnailImage)
         if (thumbnailUrl.isNotBlank()) {
-            Glide.with(this).load(thumbnailUrl).into(thumbnail)
+            Glide.with(this).load(thumbnailUrl).into(view.findViewById(R.id.thumbnailImage))
         }
 
         val playButton = view.findViewById<Button>(R.id.playButton)
@@ -88,46 +76,34 @@ class DetailFragment : Fragment() {
         statusText: TextView
     ) {
         lifecycleScope.launch {
-            val prefs = androidx.security.crypto.EncryptedSharedPreferences.create(
-                requireContext(),
-                "beam_secure_prefs",
-                androidx.security.crypto.MasterKey.Builder(requireContext())
-                    .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
-                    .build(),
-                androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-            )
+            val tokenTracker = TokenTracker(requireContext())
+            val router = AIRouter(requireContext(), tokenTracker)
 
-            val providerKey = prefs.getString(SettingsFragment.PREF_PROVIDER, SettingsFragment.PROVIDER_GEMINI)
-            val apiKey = prefs.getString(SettingsFragment.PREF_API_KEY, "") ?: ""
-            val ollamaHost = prefs.getString(SettingsFragment.PREF_OLLAMA_HOST, "") ?: ""
-
-            val aiProvider = when (providerKey) {
-                SettingsFragment.PROVIDER_GROQ -> GroqProvider(apiKey)
-                SettingsFragment.PROVIDER_OLLAMA -> OllamaProvider(host = ollamaHost)
-                else -> GeminiProvider(apiKey)
-            }
+            // Get best provider for stream extraction (light task — use secondary)
+            val aiProvider = router.getProvider(AITask.STREAM_EXTRACT)
 
             // Step 1: Try static HTML extraction (fast)
             activity?.runOnUiThread { statusText.text = "Searching for stream..." }
-            val extractor = StreamExtractor(HtmlFetcher(), aiProvider)
-            var stream = extractor.extract(detailUrl)
 
-            // Step 2: If not found, try WebView (slower but works on JS sites)
+            var stream = if (aiProvider != null) {
+                StreamExtractor(HtmlFetcher(), aiProvider).extract(detailUrl)
+            } else {
+                com.beam.model.StreamResult("", StreamType.UNKNOWN)
+            }
+
+            // Step 2: WebView fallback for JS-heavy sites
             if (stream.url.isBlank()) {
                 activity?.runOnUiThread {
-                    statusText.text = "Loading video player... (this may take up to 30s)"
+                    statusText.text = "Loading video player... (up to 30s)"
                 }
-                val webViewExtractor = WebViewStreamExtractor(requireContext())
-                stream = webViewExtractor.extract(detailUrl)
+                stream = WebViewStreamExtractor(requireContext()).extract(detailUrl)
             }
 
             activity?.runOnUiThread {
                 if (stream.url.isNotBlank()) {
                     statusText.text = ""
-                    val fragment = PlaybackFragment.newInstance(stream.url, stream.type, title)
                     parentFragmentManager.beginTransaction()
-                        .replace(R.id.fragment_container, fragment)
+                        .replace(R.id.fragment_container, PlaybackFragment.newInstance(stream.url, stream.type, title))
                         .addToBackStack(null)
                         .commit()
                 } else {
